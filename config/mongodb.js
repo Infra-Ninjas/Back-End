@@ -16,4 +16,4 @@ const connectDB = async () => {
   }
 };
 
-export default connectDB;  // Make sure this line is present
+export default connectDB;  
