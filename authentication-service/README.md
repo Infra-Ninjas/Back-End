@@ -8,7 +8,7 @@ npm install express mongoose multer bcrypt cloudinary cors dotenv jsonwebtoken n
 
 # Note: Always execute this server first to initialize authentication variables
 
-# .env 
+# .env file content
 
 MONGODB_URI = 'mongodb+srv://ysdesul:Ytcs1123@cluster0.p380x.mongodb.net/HealthSync'
 
