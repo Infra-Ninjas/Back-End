@@ -6,7 +6,7 @@ npm init
 
 npm install express mongoose multer bcrypt cloudinary cors dotenv jsonwebtoken nodemon validator
 
-Note: Execute this service after authentication-service to initialize database models
+# Note: Execute this service after authentication-service to initialize database models
 
 # .env file content
 
