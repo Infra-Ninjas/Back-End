@@ -28,7 +28,6 @@ app.use('/api/admin',adminRouter)
 
 // localhost:4001/api/admin/add-doctor
 
-
 app.get('/',(reg,res)=>{
     res.send('API WORKING for admin-service')
     })
