@@ -17,7 +17,7 @@ console.log("Cloudinary Config Loaded:", cloudinary.config());
 
 // api endpoints
 app.get('/',(reg,res)=>{
-    res.send('API WORKING')
+    res.send('API WORKING for database-service')
     })
     
-    app.listen(port, ()=> console.log("Server Started",port))
+    app.listen(port, ()=> console.log("Database-service Server Started",port))

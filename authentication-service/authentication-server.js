@@ -16,7 +16,7 @@ app.use(cors())
 app.use('/api/admin',adminRouter)
 
 app.get('/',(reg,res)=>{
-    res.send('API WORKING')
+    res.send('API WORKING for authentication-service')
     })
     
-    app.listen(port, ()=> console.log("Server Started",port))
+    app.listen(port, ()=> console.log("Authentication-service Server Started",port))

@@ -30,7 +30,7 @@ app.use('/api/admin',adminRouter)
 
 
 app.get('/',(reg,res)=>{
-    res.send('API WORKING')
+    res.send('API WORKING for admin-service')
     })
     
-    app.listen(port, ()=> console.log("Server Started",port))
+    app.listen(port, ()=> console.log("Admin-Service Server Started",port))
