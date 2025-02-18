@@ -1,9 +1,12 @@
-# admin-service
 
+# database-service
 # install dependencies
+
 npm init
 
 npm install express mongoose multer bcrypt cloudinary cors dotenv jsonwebtoken nodemon validator
+
+# Note: Execute this service after authentication-service to initialize database models
 
 # .env file content
 
@@ -14,7 +17,3 @@ CLOUDINARY_NAME = 'dnsoykerb'
 CLOUDINARY_API_KEY = '931518759528684'
 
 CLOUDINARY_SECRET_KEY = 'EsrqzTs5LhnKsfoNBzRSbpoHj4E'
-
-JWT_SECRET = "healthsync"
-
-# Note: Execute this service after initializing authentication-service and database-service
