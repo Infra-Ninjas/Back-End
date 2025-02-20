@@ -1,22 +1,23 @@
-import express from 'express'
-import cors from 'cors'
-import 'dotenv/config'
-import adminRouter from './routes/adminRoute.js';
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
+import adminRouter from "./routes/adminRoute.js";
 
 // app config
-const app = express()
-const port = process.env.PORT || 4000
+const app = express();
+const port = process.env.PORT || 4000;
 
 // middlewares
-app.use(express.json())
-app.use(cors())
+app.use(express.json());
+app.use(cors());
 
 // api endpoints
+app.use("/api/admin", adminRouter);
 
-app.use('/api/admin',adminRouter)
+app.get("/", (reg, res) => {
+  res.send("API WORKING for authentication-service");
+});
 
-app.get('/',(reg,res)=>{
-    res.send('API WORKING for authentication-service')
-    })
-    
-    app.listen(port, ()=> console.log("Authentication-service Server Started",port))
+app.listen(port, () =>
+  console.log("Authentication-service Server Started", port)
+);
