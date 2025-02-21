@@ -1,36 +1,42 @@
-import express from 'express'
-import cors from 'cors'
-import 'dotenv/config'
-import connectDB from '../../Back-End/database-service/config/mongodb.js';
-//import connectDB from 'Y:/CAA/Winter 2024/Capstone/Back-End/database-service/config/mongodb.js';
-import cloudinary from '../../Back-End/database-service/config/cloudinary.js';
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
+import connectDB from "../../Back-End/database-service/config/mongodb.js";
+import cloudinary from "../../Back-End/database-service/config/cloudinary.js";
+import adminRouter from "./routes/adminRoute.js";
+import doctorRouter from "./routes/doctorRoute.js";
 
-
-//import connectCloudinary from 'Y:/CAA/Winter 2024/Capstone/Back-End/database-service/config/cloudinary.js';
-//import connectCloudinary from 'Y:/CAA/Winter 2024/Capstone/Back-End/database-service/config/cloudinary.js';
-
-//const connectCloudinary = require('../../database-service/config/cloudinary.js');
-import adminRouter from './routes/adminRoute.js';
-
-// app config
-const app = express()
-const port = process.env.PORT || 4001
-connectDB()
-//connectCloudinary()
+// App Config
+const app = express();
+const port = process.env.PORT || 4001;
+connectDB();
 console.log("Cloudinary Config Loaded:", cloudinary.config());
 
-// middlewares
-app.use(express.json())
-app.use(cors())
+// Middlewares
+app.use(express.json());
+app.use(cors());
 
-// api endpoints
-app.use('/api/admin',adminRouter)
+// API Endpoints
+app.use("/api/admin", adminRouter);
+app.use("/api/admin", doctorRouter); // added new route to list doctors in admin panel
 
-// localhost:4001/api/admin/add-doctor
+// Test Route
+app.get("/", (req, res) => {
+  res.send("API WORKING for admin-service");
+});
 
+// Debug Routes
+app._router.stack.forEach((middleware) => {
+    if (middleware.route) { // Routes registered directly
+        console.log(`Registered Route: ${middleware.route.path}`);
+    } else if (middleware.name === "router") { // Routes inside a router
+        middleware.handle.stack.forEach((handler) => {
+            if (handler.route) {
+                console.log(`Registered Route: ${handler.route.path}`);
+            }
+        });
+    }
+});
 
-app.get('/',(reg,res)=>{
-    res.send('API WORKING')
-    })
-    
-    app.listen(port, ()=> console.log("Server Started",port))
+// Start Server
+app.listen(port, () => console.log("Admin-Service Server Started", port));
