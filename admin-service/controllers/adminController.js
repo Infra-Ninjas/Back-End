@@ -3,6 +3,9 @@ import bcrypt from "bcrypt";
 //import { v2 as cloudinary } from '../../database-service/config/cloudinary.js';
 import cloudinary from "../../database-service/config/cloudinary.js";
 import doctorModel from "../../database-service/models/doctorModel.js";
+import axios from "axios";
+
+const DATABASE_SERVICE_URL = "http://localhost:5000/api/doctors";
 
 // API for adding a doctor
 const addDoctor = async (req, res) => {
@@ -17,10 +20,11 @@ const addDoctor = async (req, res) => {
       about,
       fees,
       address,
+      image, // Accept image URL from request
     } = req.body;
+
     const imageFile = req.file;
 
-    // Checking for required fields
     if (
       !name ||
       !email ||
@@ -30,51 +34,43 @@ const addDoctor = async (req, res) => {
       !experience ||
       !about ||
       !fees ||
-      !address
+      !address ||
+      (!imageFile && !image) // Ensure either file or URL is provided
     ) {
       return res.json({ success: false, message: "Missing Details" });
     }
 
-    // Validating email format
     if (!validator.isEmail(email)) {
-      return res.json({
-        success: false,
-        message: "Please Enter a Valid Email",
-      });
+      return res.json({ success: false, message: "Invalid Email" });
     }
 
-    // Validating strong password
     if (password.length < 8) {
-      return res.json({
-        success: false,
-        message: "Please Enter a Strong Password",
-      });
+      return res.json({ success: false, message: "Weak Password" });
     }
 
     // Hashing doctor password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Ensure an image is provided
-    if (!imageFile) {
-      return res.json({ success: false, message: "Image is required" });
+    let imageUrl = image; // Use provided image URL
+
+    if (imageFile) {
+      // Convert file to Base64
+      const base64EncodedFile = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString("base64")}`;
+
+      // Upload to Cloudinary
+      const imageUpload = await cloudinary.uploader.upload(base64EncodedFile, {
+        folder: "doctors",
+        resource_type: "auto",
+      });
+
+      imageUrl = imageUpload.secure_url; // Set uploaded image URL
     }
-
-    // Convert image to Base64 format for Cloudinary
-    const base64EncodedFile = `data:${
-      imageFile.mimetype
-    };base64,${imageFile.buffer.toString("base64")}`;
-
-    // Upload image to Cloudinary
-    const imageUpload = await cloudinary.uploader.upload(base64EncodedFile, {
-      folder: "doctors",
-      resource_type: "auto",
-    });
 
     const doctorData = {
       name,
       email,
-      image: imageUpload.secure_url,
+      image: imageUrl,
       password: hashedPassword,
       speciality,
       degree,
@@ -85,7 +81,7 @@ const addDoctor = async (req, res) => {
       date: Date.now(),
     };
 
-    // Save doctor data in the database
+    // Save doctor data
     const newDoctor = new doctorModel(doctorData);
     await newDoctor.save();
 
