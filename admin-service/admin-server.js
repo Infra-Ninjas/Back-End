@@ -1,16 +1,17 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import connectDB from "../../Back-End/database-service/config/mongodb.js";
-import cloudinary from "../../Back-End/database-service/config/cloudinary.js";
+//import connectDB from "../../Back-End/database-service/config/mongodb.js";
+//import cloudinary from "../../Back-End/database-service/config/cloudinary.js";
+import axios from "axios";
 import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 
 // App Config
 const app = express();
 const port = process.env.PORT || 4001;
-connectDB();
-console.log("Cloudinary Config Loaded:", cloudinary.config());
+//connectDB();
+//console.log("Cloudinary Config Loaded:", cloudinary.config());
 
 // Middlewares
 app.use(express.json());
