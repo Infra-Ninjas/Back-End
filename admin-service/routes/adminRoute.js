@@ -1,7 +1,9 @@
 import express from 'express';
 import axios from 'axios'; // Import axios to call authentication-service
 import { addDoctor } from '../controllers/adminController.js';
-import upload from '../../database-service/middlewares/multer.js';
+
+//import upload from '../../database-service/middlewares/multer.js';
+
 //import upload from '../middlewares/multer.js';
 import authAdmin from '../../authentication-service/middlewares/authAdmin.js';
 
@@ -33,6 +35,8 @@ const authAdminMiddleware = async (req, res, next) => {
 };
 
 // Apply Middleware to Secure the Route
-adminRouter.post('/add-doctor', authAdmin, upload.single('image'), addDoctor);
+
+//adminRouter.post('/add-doctor', authAdmin, upload.single('image'), addDoctor);
+adminRouter.post('/add-doctor', authAdmin, addDoctor);
 
 export default adminRouter;

@@ -1,11 +1,9 @@
 import validator from "validator";
 import bcrypt from "bcrypt";
-//import { v2 as cloudinary } from '../../database-service/config/cloudinary.js';
-import cloudinary from "../../database-service/config/cloudinary.js";
-import doctorModel from "../../database-service/models/doctorModel.js";
 import axios from "axios";
+import FormData from "form-data";  
 
-const DATABASE_SERVICE_URL = "http://localhost:5000/api/doctors";
+const DATABASE_SERVICE_URL = "http://localhost:5000/api/doctors"; // ✅ Replace with actual service URL
 
 // API for adding a doctor
 const addDoctor = async (req, res) => {
@@ -20,75 +18,100 @@ const addDoctor = async (req, res) => {
       about,
       fees,
       address,
-      image, // Accept image URL from request
+      image, // Optional image URL
     } = req.body;
 
-    const imageFile = req.file;
+    console.log("➡️ Received Doctor Data:", req.body);
 
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !speciality ||
-      !degree ||
-      !experience ||
-      !about ||
-      !fees ||
-      !address ||
-      (!imageFile && !image) // Ensure either file or URL is provided
-    ) {
-      return res.json({ success: false, message: "Missing Details" });
+    const imageFile = req.file; // Extract uploaded image file
+
+    // 🔹 Validate required fields
+    if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
+      console.error("❌ Missing required details.");
+      return res.status(400).json({ success: false, message: "Missing Details" });
     }
 
     if (!validator.isEmail(email)) {
-      return res.json({ success: false, message: "Invalid Email" });
+      console.error("❌ Invalid email format.");
+      return res.status(400).json({ success: false, message: "Invalid Email" });
     }
 
     if (password.length < 8) {
-      return res.json({ success: false, message: "Weak Password" });
+      console.error("❌ Weak password (less than 8 characters).");
+      return res.status(400).json({ success: false, message: "Weak Password" });
     }
 
-    // Hashing doctor password
+    // 🔹 Hash the password before saving
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    let imageUrl = image; // Use provided image URL
+    let imageUrl = image; // Default to provided URL
 
     if (imageFile) {
-      // Convert file to Base64
-      const base64EncodedFile = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString("base64")}`;
+      // 🔹 Upload image to `database-service`
+      const formData = new FormData();
+      formData.append("image", imageFile.buffer, { filename: imageFile.originalname });
 
-      // Upload to Cloudinary
-      const imageUpload = await cloudinary.uploader.upload(base64EncodedFile, {
-        folder: "doctors",
-        resource_type: "auto",
-      });
+      try {
+        console.log("📤 Uploading image...");
+        const uploadResponse = await axios.post(`${DATABASE_SERVICE_URL}/upload-image`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
 
-      imageUrl = imageUpload.secure_url; // Set uploaded image URL
+        if (uploadResponse.data.success) {
+          imageUrl = uploadResponse.data.imageUrl;
+          console.log("✅ Image uploaded successfully:", imageUrl);
+        } else {
+          console.error("❌ Image Upload Failed:", uploadResponse.data.message);
+          return res.status(500).json({ success: false, message: "Image Upload Failed" });
+        }
+      } catch (err) {
+        console.error("❌ Image Upload Error:", err.message);
+        return res.status(500).json({ success: false, message: "Image Upload Error" });
+      }
     }
 
+    // 🔹 Prepare doctor data for `database-service`
     const doctorData = {
       name,
       email,
-      image: imageUrl,
-      password: hashedPassword,
+      password: hashedPassword, 
       speciality,
       degree,
       experience,
       about,
       fees,
-      address: JSON.parse(address),
-      date: Date.now(),
+      address,
+      image: imageUrl, 
+      available: true,  
+      slots_booked: {}, 
+      date: Date.now(), 
     };
 
-    // Save doctor data
-    const newDoctor = new doctorModel(doctorData);
-    await newDoctor.save();
+    // 🔹 Save doctor directly in database-service
+    try {
+      console.log("📤 Sending doctor data to Database-Service:", doctorData);
+      const response = await axios.post(DATABASE_SERVICE_URL, doctorData, {
+        headers: { "Content-Type": "application/json" },
+      });
 
-    res.json({ success: true, message: "Doctor Added Successfully" });
+      console.log("✅ Database-Service Response:", response.data);
+
+      res.status(201).json({ success: true, message: "Doctor added successfully!" });
+
+    } catch (error) {
+      console.error("❌ Database-service error:", error.response?.data || error.message);
+
+      if (error.response?.data?.code === 11000) {
+        return res.status(400).json({ success: false, message: "Doctor with this email already exists." });
+      }
+
+      res.status(500).json({ success: false, message: "Database Service Error" });
+    }
+
   } catch (error) {
-    console.error("Error adding doctor:", error);
-    res.json({ success: false, message: error.message });
+    console.error("❌ Error adding doctor:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 

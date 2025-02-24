@@ -12,7 +12,13 @@ const doctorSchema = new mongoose.Schema(
     about: { type: String, required: true },
     available: { type: Boolean, default: true },
     fees: { type: Number, required: true },
-    address: { type: Object, required: true },
+    //address: { type: Object, required: true },
+    address: {
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      zip: { type: String, required: true }
+  },
     date: { type: Number, required: true },
     slots_booked: { type: Object, default: true },
   },
