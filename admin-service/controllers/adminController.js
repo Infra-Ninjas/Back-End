@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import axios from "axios";
 import FormData from "form-data";  
 
-const DATABASE_SERVICE_URL = "http://localhost:5000/api/doctors"; // ✅ Replace with actual service URL
+const DATABASE_SERVICE_URL = "http://db-service:5000/api/doctors"; // ✅ Replace with actual service URL
 
 // API for adding a doctor
 const addDoctor = async (req, res) => {

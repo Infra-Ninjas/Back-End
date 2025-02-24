@@ -1,23 +1,35 @@
+process.on("uncaughtException", (err) => {
+  console.error("🔥 Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("⚠️ Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import adminRouter from "./routes/adminRoute.js";
+import authRouter from "./routes/authRoute.js"; // Import authRoute.js
 
-// app config
+// App config
 const app = express();
 const port = process.env.PORT || 4000;
 
-// middlewares
+// Middlewares
 app.use(express.json());
-app.use(cors({ origin: '*' }));
+app.use(cors({ origin: "*" }));
 
-// api endpoints
+// Register API Endpoints
 app.use("/api/admin", adminRouter);
+app.use("/api/auth", authRouter); // ✅ ADD THIS LINE
 
-app.get("/", (reg, res) => {
+// Test Endpoint
+app.get("/", (req, res) => {
   res.send("API WORKING for authentication-service");
 });
 
 app.listen(port, () =>
-  console.log("Authentication-service Server Started", port)
+  console.log("Authentication-service Server Started on port", port)
 );

@@ -8,6 +8,7 @@ const authRouter = express.Router();
 
 // Validate Token API (Called by admin-service)
 authRouter.post("/validate-token", (req, res) => {
+  console.log("Received Request Body:", req.body);
   try {
     const { token } = req.body;
     if (!token) {
@@ -15,6 +16,7 @@ authRouter.post("/validate-token", (req, res) => {
     }
 
     const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded Token:", token_decode); // 🔥 Debugging line
 
     if (token_decode.email !== process.env.ADMIN_EMAIL) {
       return res
