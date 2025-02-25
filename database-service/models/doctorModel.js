@@ -5,7 +5,8 @@ const doctorSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    image: { type: String, required: true },
+   // image: { type: String, required: true },
+   image: { type: String, required: false, default: "default-profile.png" },
     speciality: { type: String, required: true },
     degree: { type: String, required: true },
     experience: { type: String, required: true },
@@ -20,7 +21,7 @@ const doctorSchema = new mongoose.Schema(
       zip: { type: String, required: true }
   },
     date: { type: Number, required: true },
-    slots_booked: { type: Object, default: true },
+    slots_booked: { type: Object, default: false },
   },
   { minimize: false }
 );

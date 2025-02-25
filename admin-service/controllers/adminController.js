@@ -1,81 +1,95 @@
 import validator from "validator";
 import bcrypt from "bcrypt";
 import axios from "axios";
-import FormData from "form-data";  
+import FormData from "form-data";
 
-const DATABASE_SERVICE_URL = "http://db-service:5000/api/doctors"; // ✅ Replace with actual service URL
+const DATABASE_SERVICE_URL = "http://db-service:5000/api/upload-image"; // ✅ Ensure this is correct
 
-// API for adding a doctor
 const addDoctor = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      speciality,
-      degree,
-      experience,
-      about,
-      fees,
-      address,
-      image, // Optional image URL
-    } = req.body;
+    console.log("📩 Incoming Request Body:", req.body); // ✅ Debugging log
+    const requiredFields = [
+      "name",
+      "email",
+      "password",
+      "speciality",
+      "degree",
+      "experience",
+      "about",
+      "fees",
+      "address",
+    ];
 
-    console.log("➡️ Received Doctor Data:", req.body);
+    const missingFields = requiredFields.filter(field => !req.body[field]);
 
-    const imageFile = req.file; // Extract uploaded image file
-
-    // 🔹 Validate required fields
-    if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
-      console.error("❌ Missing required details.");
-      return res.status(400).json({ success: false, message: "Missing Details" });
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+      });
     }
 
+    const { name, email, password, speciality, degree, experience, about, fees } = req.body;
+
+    let { address } = req.body;
+
+    // 🔹 Parse the `address` field if it's a string
+    if (typeof address === "string") {
+      try {
+        address = JSON.parse(address);
+      } catch (error) {
+        return res.status(400).json({ success: false, message: "Invalid address format" });
+      }
+    }
+
+
     if (!validator.isEmail(email)) {
-      console.error("❌ Invalid email format.");
       return res.status(400).json({ success: false, message: "Invalid Email" });
     }
 
     if (password.length < 8) {
-      console.error("❌ Weak password (less than 8 characters).");
       return res.status(400).json({ success: false, message: "Weak Password" });
     }
 
-    // 🔹 Hash the password before saving
+    // 🔹 Hash Password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    let imageUrl = image; // Default to provided URL
-
-    if (imageFile) {
-      // 🔹 Upload image to `database-service`
+    let imageUrl = null;
+    if (req.file) {
+      console.log("📤 Forwarding image to `db-service`...");
+      // 🔹 Convert file to a stream and send to `db-service`
       const formData = new FormData();
-      formData.append("image", imageFile.buffer, { filename: imageFile.originalname });
-
+      formData.append("image", req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+      });
+    
       try {
-        console.log("📤 Uploading image...");
-        const uploadResponse = await axios.post(`${DATABASE_SERVICE_URL}/upload-image`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+        const uploadResponse = await axios.post(DATABASE_SERVICE_URL, formData, {
+          headers: { ...formData.getHeaders() },
         });
-
+    
         if (uploadResponse.data.success) {
           imageUrl = uploadResponse.data.imageUrl;
-          console.log("✅ Image uploaded successfully:", imageUrl);
+          console.log("✅ Image Uploaded:", imageUrl);
         } else {
-          console.error("❌ Image Upload Failed:", uploadResponse.data.message);
           return res.status(500).json({ success: false, message: "Image Upload Failed" });
         }
       } catch (err) {
         console.error("❌ Image Upload Error:", err.message);
         return res.status(500).json({ success: false, message: "Image Upload Error" });
       }
+    } else {
+      imageUrl = "default-profile.png"; // ✅ Fallback in case no image is provided
     }
+    
 
-    // 🔹 Prepare doctor data for `database-service`
+    // 🔹 Prepare doctor data
     const doctorData = {
       name,
       email,
-      password: hashedPassword, 
+      password: hashedPassword,
       speciality,
       degree,
       experience,
@@ -83,31 +97,19 @@ const addDoctor = async (req, res) => {
       fees,
       address,
       image: imageUrl, 
-      available: true,  
+      available: true, 
       slots_booked: {}, 
-      date: Date.now(), 
+      date: Date.now(),
     };
 
-    // 🔹 Save doctor directly in database-service
-    try {
-      console.log("📤 Sending doctor data to Database-Service:", doctorData);
-      const response = await axios.post(DATABASE_SERVICE_URL, doctorData, {
-        headers: { "Content-Type": "application/json" },
-      });
+    // 🔹 Send to database service
+    const response = await axios.post("http://db-service:5000/api/doctors", doctorData, {
+      headers: { "Content-Type": "application/json" },
+    });
 
-      console.log("✅ Database-Service Response:", response.data);
+    console.log("✅ Doctor Added:", response.data);
 
-      res.status(201).json({ success: true, message: "Doctor added successfully!" });
-
-    } catch (error) {
-      console.error("❌ Database-service error:", error.response?.data || error.message);
-
-      if (error.response?.data?.code === 11000) {
-        return res.status(400).json({ success: false, message: "Doctor with this email already exists." });
-      }
-
-      res.status(500).json({ success: false, message: "Database Service Error" });
-    }
+    res.status(201).json({ success: true, message: "Doctor added successfully!" });
 
   } catch (error) {
     console.error("❌ Error adding doctor:", error);
