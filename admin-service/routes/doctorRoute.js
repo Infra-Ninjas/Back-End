@@ -1,12 +1,9 @@
-import express from 'express'
-import { allDoctors } from '../controllers/doctorController.js';
-
-//import authAdmin from '../../authentication-service/middlewares/authAdmin.js';
+import express from "express";
+import { allDoctors } from "../controllers/doctorController.js";
 
 const doctorRouter = express.Router();
 
-// Apply Middleware to Secure the Route
-//doctorRouter.post('/all-doctors', authAdmin, allDoctors);
-//doctorRouter.post('/all-doctors', allDoctors);
+// 🔹 Route to get all doctors from `db-service`
+doctorRouter.get("/all-doctors", allDoctors); // ✅ Use GET instead of POST
 
 export default doctorRouter;
