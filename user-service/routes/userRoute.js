@@ -1,12 +1,9 @@
-import express from 'express'
-import { registerUser } from '../controllers/userController.js';
-
-import authAdmin from '../../authentication-service/middlewares/authAdmin.js';
+import express from "express";
+import { registerUser } from "../controllers/userController.js";
 
 const userRouter = express.Router();
 
-// Apply Middleware to Secure the Route
-
-userRouter.post('/register', registerUser);
+// User Registration Route
+userRouter.post("/register", registerUser);
 
 export default userRouter;

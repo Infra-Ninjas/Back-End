@@ -1,28 +1,37 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
-import connectDB from "../../Back-End/database-service/config/mongodb.js";
-import cloudinary from "../../Back-End/database-service/config/cloudinary.js";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 import userRouter from "./routes/userRoute.js";
+
+// Load environment variables
+dotenv.config();
 
 // App Config
 const app = express();
 const port = process.env.PORT || 4002;
-connectDB();
-console.log("Cloudinary Config Loaded:", cloudinary.config());
+const mongoURI = process.env.MONGODB_URI;
+
+// Connect to MongoDB
+mongoose
+  .connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ Connected to MongoDB successfully"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // Middlewares
 app.use(express.json());
 app.use(cors());
 
 // API Endpoints
-app.use("/api/user", userRouter);// user path
-
+app.use("/api/user", userRouter);
 
 // Test Route
 app.get("/", (req, res) => {
-    res.send("API WORKING for user-service");
-  });
-  
+  res.send("✅ User-Service API is working!");
+});
+
 // Start Server
-app.listen(port, () => console.log("User-Service Server Started", port));
+app.listen(port, () => console.log(`🚀 User-Service started on port ${port}`));

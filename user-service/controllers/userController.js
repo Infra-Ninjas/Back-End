@@ -1,64 +1,52 @@
-import validator from 'validator'
+import validator from "validator";
 import bcrypt from "bcrypt";
-import userModel from "../../database-service/models/userModel.js";
-import jwt from 'jsonwebtoken'
+import jwt from "jsonwebtoken";
+import axios from "axios"; // Import axios for API calls
 
-//API to register User
+const registerUser = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-const registerUser = async (req,res) => {
-    try{
+    // Checking for required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: "Missing Details" });
+    }
 
-        const { name, email, password } = req.body
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ success: false, message: "Invalid Email" });
+    }
 
-        // Checking for required fields
-    if (
-        !name ||
-        !email ||
-        !password )
-        {
-        return res.json({ success: false, message: "Missing Details" });
-      }
-
-     if (!validator.isEmail(email)) {
-        return res.json({
-            success: false,
-            message: "Please Enter a Valid Email",
-              });
-            }
-
-    // Validating strong password
+    // Validating password strength
     if (password.length < 8) {
-        return res.json({
-          success: false,
-          message: "Please Enter a Strong Password",
-        });
-      }
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters" });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user data
+    const userData = { name, email, password: hashedPassword };
+
+    // 🔥 Instead of importing userModel, send a request to db-service
+    const dbServiceUrl = "http://db-service:5000/users"; // Adjust API route as per db-service
+
+    const response = await axios.post(dbServiceUrl, userData);
     
-    // Hashing user password
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password, salt)
-  
-        const userData = {
-            name,
-            email,
-            password : hashedPassword
-        }
-
-        const newUser = new userModel(userData)
-        const user = await newUser.save()
-        const token = jwt.sign({id:user._id}, process.env.JWT_SECRET )
-
-        res.json( {success:true,token})
-
-
+    if (response.status !== 201) {
+      return res.status(response.status).json(response.data);
     }
 
-    catch (error){
+    const user = response.data;
 
-        console.error("Error registering user:", error);
-        console.log(error)
-        res.json({ success: false, message: error.message });
-    }
-}
+    // Generate JWT Token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-export {registerUser}
+    res.status(201).json({ success: true, token });
+  } catch (error) {
+    console.error("❌ Error registering user:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export { registerUser };
