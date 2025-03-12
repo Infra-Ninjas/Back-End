@@ -11,7 +11,7 @@ const port = process.env.PORT || 4002;
 app.use(express.json());
 app.use(cors());
 
-app.use("/api/user", userRouter); // Mounts /api/user/register and /api/user/users
+app.use("/api/user", userRouter);
 
 app.get("/", (req, res) => {
   res.send("✅ User-Service API is working!");

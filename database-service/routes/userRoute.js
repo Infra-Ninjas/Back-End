@@ -1,33 +1,34 @@
 import express from "express";
-import axios from "axios";
-import User from "../models/userModel.js"; // Import the user model
+import User from "../models/userModel.js";
 
 const userRouter = express.Router();
 
-// Register a user (called by user-service)
+// Register a user
 userRouter.post("/user/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    const user = new User({ name, email, password }); // Password is already hashed by user-service
+    const user = new User({ name, email, password, role: role || "Patient" });
     await user.save();
 
-    res.status(201).json({ success: true, data: { _id: user._id, name, email } });
+    res.status(201).json({ success: true, data: { _id: user._id, name, email, role: user.role } });
   } catch (error) {
     console.error("Error in db-service register:", error.message);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 
-// Get all users
+// Get users (include password for login query)
 userRouter.get("/users", async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // Exclude password
+    const { email } = req.query;
+    const query = email ? { email } : {};
+    const users = await User.find(query).select(email ? "+password" : "-password"); // Include password if querying by email
     res.status(200).json({ success: true, data: users });
   } catch (error) {
     console.error("Error in db-service get users:", error.message);

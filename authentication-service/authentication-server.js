@@ -6,12 +6,12 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("⚠️ Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import adminRouter from "./routes/adminRoute.js";
-import authRouter from "./routes/authRoute.js"; // Import authRoute.js
+import authRouter from "./routes/authRoute.js";
+import userRouter from "./routes/userRoute.js"; // Ensure this import is present
 
 // App config
 const app = express();
@@ -23,7 +23,8 @@ app.use(cors({ origin: "*" }));
 
 // Register API Endpoints
 app.use("/api/admin", adminRouter);
-app.use("/api/auth", authRouter); // ✅ ADD THIS LINE
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter); // This line caused the error if userRouter wasn’t imported
 
 // Test Endpoint
 app.get("/", (req, res) => {
