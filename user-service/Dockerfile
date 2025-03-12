@@ -1,24 +1,22 @@
-# Use a base image with build tools
-FROM node:18
+FROM node:18-alpine
 
-# Set the working directory
 WORKDIR /app
 
-# Install system dependencies required for bcrypt
-RUN apt-get update && apt-get install -y python3 make g++ gcc
-
-# Copy package.json and package-lock.json
+# Copy package files first
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies and rebuild native modules
+RUN npm ci
 
-# Manually rebuild bcrypt
-RUN npm rebuild bcrypt --build-from-source
-
-# Copy the rest of the application code
+# Copy the rest of the code
 COPY . .
 
-# Expose port and start the application
-EXPOSE 4002
-CMD ["node", "user-server.js"]
+EXPOSE 5000
+
+CMD ["npm", "start"]
+
+#docker build -t infra-ninjas-db-service .
+#docker run -d -p 5000:5000 infra-ninjas-db-service
+#docker ps
+#docker logs <container_id>
+#docker exec -it <container_id> sh
