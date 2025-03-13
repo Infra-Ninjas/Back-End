@@ -1,11 +1,14 @@
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
 import "dotenv/config";
 import connectDB from "./config/mongodb.js";
 import cloudinary from "./config/cloudinary.js";
 import doctorRouter from "./routes/doctorRoute.js"; // Doctor Routes
 import uploadRouter from "./routes/uploadRoute.js"; // Image Upload Route
 import userRouter from "./routes/userRoute.js"; // user Routes
+
+//import doctorRouter from "./routes/doctorRoute.js"; // Add doctorRouter
 //import userRouter from "../user-service/routes/userRoute.js";
 
 // app config
@@ -18,6 +21,15 @@ app.use(cors());
 connectDB();
 console.log("Cloudinary Config Loaded:", cloudinary.config());
 
+// MongoDB Connection
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("MongoDB Connected:", mongoose.connection.host))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
+
 // ✅ Move API routes outside `app.get("/")`
 app.use("/api/doctors", doctorRouter);
 app.use("/api", uploadRouter); // Add upload route
@@ -25,6 +37,7 @@ app.use("/api", uploadRouter); // Add upload route
 //app.use("/api", userRouter);  // Keeps /api/users
 //app.use("/", userRouter);  // Allows /users
 app.use("/api", userRouter); // Mounts /api/user/register and /api/users
+app.use("/api", doctorRouter); // Add doctorRouter
 
 
 // Root route

@@ -32,7 +32,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: "Patient", // Fixed to Patient only
+      role: 3, // Fixed to Patient only
     };
 
     const response = await axios.post(`${dbServiceUrl}/user/register`, userData);
