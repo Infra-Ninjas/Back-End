@@ -14,7 +14,9 @@ const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     if (!validator.isEmail(email)) {
@@ -22,7 +24,12 @@ const registerUser = async (req, res) => {
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ success: false, message: "Password must be at least 8 characters" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Password must be at least 8 characters",
+        });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -35,7 +42,10 @@ const registerUser = async (req, res) => {
       role: 3, // Fixed to Patient only
     };
 
-    const response = await axios.post(`${dbServiceUrl}/user/register`, userData);
+    const response = await axios.post(
+      `${dbServiceUrl}/user/register`,
+      userData
+    );
     if (!response.data.success) {
       return res.status(response.status).json(response.data);
     }
@@ -63,22 +73,30 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Missing email or password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing email or password" });
     }
 
     if (!validator.isEmail(email)) {
       return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
-    const response = await axios.get(`${dbServiceUrl}/users`, { params: { email } });
+    const response = await axios.get(`${dbServiceUrl}/users`, {
+      params: { email },
+    });
     if (!response.data.success || !response.data.data.length) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
     const user = response.data.data[0];
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const token = jwt.sign(

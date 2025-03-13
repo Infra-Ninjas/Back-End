@@ -26,16 +26,18 @@ app.get("/", (req, res) => {
 
 // Debug Routes (List all registered routes)
 app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-        console.log(`Registered Route: ${middleware.route.path}`);
-    } else if (middleware.name === "router") {
-        middleware.handle.stack.forEach((handler) => {
-            if (handler.route) {
-                console.log(`Registered Route: ${handler.route.path}`);
-            }
-        });
-    }
+  if (middleware.route) {
+    console.log(`Registered Route: ${middleware.route.path}`);
+  } else if (middleware.name === "router") {
+    middleware.handle.stack.forEach((handler) => {
+      if (handler.route) {
+        console.log(`Registered Route: ${handler.route.path}`);
+      }
+    });
+  }
 });
 
 // Start Server
-app.listen(port, () => console.log(`✅ Admin-Service Server Started on port ${port}`));
+app.listen(port, () =>
+  console.log(`✅ Admin-Service Server Started on port ${port}`)
+);

@@ -15,8 +15,8 @@ EXPOSE 4001
 
 CMD ["npm", "start"]
 
-#docker build -t infra-ninjas-admin-service .
-#docker run -d -p 4001:4001 infra-ninjas-admin-service
-#docker ps
-#docker logs <container_id>
-#docker exec -it <container_id> sh
+# docker build -t admin-service .
+# docker run -d -p 4001:4001 admin-service
+# docker ps
+# docker logs <container_id>
+# docker exec -it <container_id> sh
