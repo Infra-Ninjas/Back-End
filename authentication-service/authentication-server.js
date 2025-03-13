@@ -11,7 +11,8 @@ import cors from "cors";
 import "dotenv/config";
 import adminRouter from "./routes/adminRoute.js";
 import authRouter from "./routes/authRoute.js";
-import userRouter from "./routes/userRoute.js"; // Ensure this import is present
+import userRouter from "./routes/userRoute.js";
+import doctorRouter from "./routes/doctorRoute.js"; // Import the new doctor route
 
 // App config
 const app = express();
@@ -24,7 +25,8 @@ app.use(cors({ origin: "*" }));
 // Register API Endpoints
 app.use("/api/admin", adminRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/user", userRouter); // This line caused the error if userRouter wasn’t imported
+app.use("/api/user", userRouter);
+app.use("/api/doctor", doctorRouter); // Register the new doctor route
 
 // Test Endpoint
 app.get("/", (req, res) => {

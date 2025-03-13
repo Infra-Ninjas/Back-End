@@ -1,12 +1,18 @@
 import express from "express";
+import bcrypt from "bcrypt";
 import Doctor from "../models/doctorModel.js";
+import adminAuth from "../middlewares/auth.js"; // Import the middleware
 
-const doctorRouter = express.Router(); 
+const doctorRouter = express.Router();
 
-// ✅ 1. Create a new doctor (POST /api/doctors)
-doctorRouter.post("/", async (req, res) => {
+// ✅ 1. Create a new doctor (POST /api/doctors) - Used by Admin
+doctorRouter.post("/", adminAuth, async (req, res) => {
   try {
-    const newDoctor = new Doctor(req.body);
+    const { password, ...rest } = req.body;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newDoctor = new Doctor({ ...rest, password: hashedPassword });
     await newDoctor.save();
     res.status(201).json({ message: "Doctor created successfully", newDoctor });
   } catch (error) {
@@ -17,55 +23,31 @@ doctorRouter.post("/", async (req, res) => {
 // ✅ 2. Get all doctors (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
   try {
-    const doctors = await Doctor.find();
-    res.json(doctors);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const { email, format } = req.query;
+    let query = {};
 
-/*
-// ✅ 3. Get a single doctor by ID (GET /api/doctors/:id)
-router.get("/:id", async (req, res) => {
-  try {
-    const doctor = await Doctor.findById(req.params.id);
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found" });
+    if (email) {
+      query.email = email;
     }
-    res.json(doctor);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-// ✅ 4. Update a doctor by ID (PUT /api/doctors/:id)
-router.put("/:id", async (req, res) => {
-  try {
-    const updatedDoctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updatedDoctor) {
-      return res.status(404).json({ message: "Doctor not found" });
-    }
-    res.json({ message: "Doctor updated successfully", updatedDoctor });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const doctors = await Doctor.find(query).select("-password -email");
 
-// ✅ 5. Delete a doctor by ID (DELETE /api/doctors/:id)
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedDoctor = await Doctor.findByIdAndDelete(req.params.id);
-    if (!deletedDoctor) {
-      return res.status(404).json({ message: "Doctor not found" });
+    if (email) {
+      const doctor = await Doctor.findOne({ email }).select("+password +role");
+      if (!doctor) {
+        return res.status(404).json({ success: false, message: "Doctor not found" });
+      }
+      return res.status(200).json({ success: true, data: [doctor] });
     }
-    res.json({ message: "Doctor deleted successfully" });
+
+    if (format === "structured") {
+      res.status(200).json({ success: true, data: doctors });
+    } else {
+      res.json(doctors);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-*/
 
 export default doctorRouter;

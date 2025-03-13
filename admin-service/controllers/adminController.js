@@ -1,5 +1,4 @@
 import validator from "validator";
-import bcrypt from "bcrypt";
 import axios from "axios";
 import FormData from "form-data";
 
@@ -8,6 +7,7 @@ const DATABASE_SERVICE_URL = "http://db-service:5000/api/upload-image"; // ✅ E
 const addDoctor = async (req, res) => {
   try {
     console.log("📩 Incoming Request Body:", req.body); // ✅ Debugging log
+
     const requiredFields = [
       "name",
       "email",
@@ -61,10 +61,6 @@ const addDoctor = async (req, res) => {
       return res.status(400).json({ success: false, message: "Weak Password" });
     }
 
-    // 🔹 Hash Password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     let imageUrl = null;
     if (req.file) {
       console.log("📤 Forwarding image to `db-service`...");
@@ -102,11 +98,11 @@ const addDoctor = async (req, res) => {
       imageUrl = "default-profile.png"; // ✅ Fallback in case no image is provided
     }
 
-    // 🔹 Prepare doctor data
+    // 🔹 Prepare doctor data (send plaintext password)
     const doctorData = {
       name,
       email,
-      password: hashedPassword,
+      password, // Send plaintext password, let db-service hash it
       speciality,
       degree,
       experience,
@@ -119,12 +115,21 @@ const addDoctor = async (req, res) => {
       date: Date.now(),
     };
 
-    // 🔹 Send to database service
+    // 🔹 Extract and validate the admin token
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Admin token missing" });
+    }
+
+    // 🔹 Send to database service with Authorization header
     const response = await axios.post(
       "http://db-service:5000/api/doctors",
       doctorData,
       {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Forward the admin token
+        },
       }
     );
 
@@ -135,7 +140,10 @@ const addDoctor = async (req, res) => {
       .json({ success: true, message: "Doctor added successfully!" });
   } catch (error) {
     console.error("❌ Error adding doctor:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
   }
 };
 

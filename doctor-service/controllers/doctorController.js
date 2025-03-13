@@ -1,6 +1,8 @@
 import axios from "axios";
 import dotenv from "dotenv";
 
+
+
 dotenv.config();
 
 const dbServiceUrl = "http://db-service:5000/api";
@@ -35,5 +37,8 @@ const doctorList = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+
 
 export { doctorList };
