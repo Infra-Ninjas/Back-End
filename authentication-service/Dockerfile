@@ -15,8 +15,8 @@ EXPOSE 4000
 
 CMD ["npm", "start"]
 
-#docker build -t infra-ninjas-auth-service .
-#docker run -d -p 4000:4000 infra-ninjas-auth-service
-#docker ps
-#docker logs <container_id>
-#docker exec -it <container_id> sh
+# docker build -t auth-service .
+# docker run -d -p 4000:4000 auth-service
+# docker ps
+# docker logs <container_id>
+# docker exec -it <container_id> sh
