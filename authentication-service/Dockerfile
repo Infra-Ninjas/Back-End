@@ -20,3 +20,6 @@ CMD ["npm", "start"]
 # docker ps
 # docker logs <container_id>
 # docker exec -it <container_id> sh
+
+# docker tag auth-service:latest rupeshvanneldas27/auth-service:latest && docker push rupeshvanneldas27/auth-service:latest
+# docker build -t rupeshvanneldas27/auth-service:latest . && docker push rupeshvanneldas27/auth-service:latest

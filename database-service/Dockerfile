@@ -20,3 +20,6 @@ CMD ["npm", "start"]
 # docker ps
 # docker logs <container_id>
 # docker exec -it <container_id> sh
+
+# docker tag db-service:latest rupeshvanneldas27/db-service:latest && docker push rupeshvanneldas27/db-service:latest
+# docker build -t rupeshvanneldas27/db-service:latest . && docker push rupeshvanneldas27/db-service:latest
