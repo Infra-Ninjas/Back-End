@@ -36,4 +36,18 @@ userRouter.get("/users", async (req, res) => {
   }
 });
 
+// Get a single user by ID (GET /api/users/:userId)
+userRouter.get("/users/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
 export default userRouter;

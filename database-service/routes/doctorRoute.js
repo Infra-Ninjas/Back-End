@@ -1,11 +1,11 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import Doctor from "../models/doctorModel.js";
-import adminAuth from "../middlewares/auth.js"; // Import the middleware
+import adminAuth from "../middlewares/auth.js";
 
 const doctorRouter = express.Router();
 
-// ✅ 1. Create a new doctor (POST /api/doctors) - Used by Admin
+// Create a new doctor (POST /api/doctors) - Used by Admin
 doctorRouter.post("/", adminAuth, async (req, res) => {
   try {
     const { password, ...rest } = req.body;
@@ -20,18 +20,13 @@ doctorRouter.post("/", adminAuth, async (req, res) => {
   }
 });
 
-// ✅ 2. Get all doctors (GET /api/doctors)
+// Get all doctors (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
   try {
-    const { email, format } = req.query;
+    const { email, available, format } = req.query;
     let query = {};
 
-    if (email) {
-      query.email = email;
-    }
-
-    const doctors = await Doctor.find(query).select("-password -email");
-
+    // Handle email query (for authentication purposes, e.g., doctor login)
     if (email) {
       const doctor = await Doctor.findOne({ email }).select("+password +role");
       if (!doctor) {
@@ -40,13 +35,54 @@ doctorRouter.get("/", async (req, res) => {
       return res.status(200).json({ success: true, data: [doctor] });
     }
 
-    if (format === "structured") {
-      res.status(200).json({ success: true, data: doctors });
-    } else {
-      res.json(doctors);
+    // Build query for listing doctors
+    if (available === "true") {
+      query.available = true;
     }
+
+    // Fetch doctors, excluding sensitive fields
+    const doctors = await Doctor.find(query).select("-password -email -role -slots_booked");
+
+    if (!doctors || doctors.length === 0) {
+      return res.status(404).json({ success: false, message: "No doctors found" });
+    }
+
+    // Always return a structured response
+    res.status(200).json({ success: true, data: doctors });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching doctors:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get a single doctor by ID (GET /api/doctors/:id)
+doctorRouter.get("/:id", async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.params.id).select("-password -role -slots_booked");
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+    res.json({ success: true, data: doctor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update doctor's slots_booked (PUT /api/doctors/:id/slots)
+doctorRouter.put("/:id/slots", async (req, res) => {
+  try {
+    const { slots_booked } = req.body;
+    const updatedDoctor = await Doctor.findByIdAndUpdate(
+      req.params.id,
+      { slots_booked },
+      { new: true }
+    );
+    if (!updatedDoctor) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+    res.json({ success: true, message: "Slots updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

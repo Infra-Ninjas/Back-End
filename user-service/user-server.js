@@ -11,6 +11,8 @@ const port = process.env.PORT || 4002;
 app.use(express.json());
 app.use(cors());
 
+// Debug: Log when routes are mounted
+console.log("Mounting userRouter at /api/user");
 app.use("/api/user", userRouter);
 
 app.get("/", (req, res) => {
