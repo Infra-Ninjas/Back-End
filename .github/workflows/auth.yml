@@ -32,7 +32,8 @@ jobs:
             --build-arg CLOUDINARY_SECRET_KEY=${{ secrets.CLOUDINARY_SECRET_KEY }} \
             --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
             -f authentication-service/Dockerfile \
-            -t ${{ secrets.ACR_LOGIN_SERVER }}/authentication-service:latest .
+            -t ${{ secrets.ACR_LOGIN_SERVER }}/authentication-service:latest \
+            .
 
       - name: Push Docker image to ACR
         run: docker push ${{ secrets.ACR_LOGIN_SERVER }}/authentication-service:latest
