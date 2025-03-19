@@ -23,10 +23,9 @@ doctorRouter.post("/", adminAuth, async (req, res) => {
 // Get all doctors (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
   try {
-    const { email, available, format } = req.query;
+    const { email, available } = req.query;
     let query = {};
 
-    // Handle email query (for authentication purposes, e.g., doctor login)
     if (email) {
       const doctor = await Doctor.findOne({ email }).select("+password +role");
       if (!doctor) {
@@ -35,19 +34,16 @@ doctorRouter.get("/", async (req, res) => {
       return res.status(200).json({ success: true, data: [doctor] });
     }
 
-    // Build query for listing doctors
     if (available === "true") {
       query.available = true;
     }
 
-    // Fetch doctors, excluding sensitive fields
     const doctors = await Doctor.find(query).select("-password -email -role -slots_booked");
 
     if (!doctors || doctors.length === 0) {
       return res.status(404).json({ success: false, message: "No doctors found" });
     }
 
-    // Always return a structured response
     res.status(200).json({ success: true, data: doctors });
   } catch (error) {
     console.error("Error fetching doctors:", error.message);
@@ -58,7 +54,7 @@ doctorRouter.get("/", async (req, res) => {
 // Get a single doctor by ID (GET /api/doctors/:id)
 doctorRouter.get("/:id", async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id).select("-password -role -slots_booked");
+    const doctor = await Doctor.findById(req.params.id).select("-password -role"); // Include slots_booked
     if (!doctor) {
       return res.status(404).json({ success: false, message: "Doctor not found" });
     }

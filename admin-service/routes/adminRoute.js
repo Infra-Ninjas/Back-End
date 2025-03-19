@@ -2,11 +2,12 @@ import express from "express";
 import axios from "axios";
 import { addDoctor } from "../controllers/adminController.js";
 import multer from "multer";
+import { appointmentCancel, appointmentsAdmin } from "../controllers/appointmentController.js";
 
-const upload = multer({ storage: multer.memoryStorage() }); // Use memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 const adminRouter = express.Router();
 
-// ✅ Middleware to Validate JWT via Authentication Service
+// Middleware to Validate JWT via Authentication Service
 const authAdminMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
@@ -16,7 +17,6 @@ const authAdminMiddleware = async (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    // ✅ Validate token with authentication-service
     const response = await axios.post("http://authentication-service:4000/api/auth/validate-token", { token });
 
     if (response.data.success) {
@@ -35,7 +35,8 @@ const authAdminMiddleware = async (req, res, next) => {
   }
 };
 
-// ✅ Pass `multipart/form-data` directly to controller
-//adminRouter.post("/add-doctor", authAdminMiddleware, addDoctor);
 adminRouter.post("/add-doctor", authAdminMiddleware, upload.single("image"), addDoctor);
+adminRouter.get("/list-appointments", authAdminMiddleware, appointmentsAdmin);
+adminRouter.post("/cancel-appointment", authAdminMiddleware, appointmentCancel);
+
 export default adminRouter;
