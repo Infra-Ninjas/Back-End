@@ -15,11 +15,3 @@ EXPOSE 4000
 
 CMD ["npm", "start"]
 
-# docker build -t auth-service .
-# docker run -d -p 4000:4000 auth-service
-# docker ps
-# docker logs <container_id>
-# docker exec -it <container_id> sh
-
-# docker tag auth-service:latest rupeshvanneldas27/auth-service:latest && docker push rupeshvanneldas27/auth-service:latest
-# docker build -t rupeshvanneldas27/auth-service:latest . && docker push rupeshvanneldas27/auth-service:latest

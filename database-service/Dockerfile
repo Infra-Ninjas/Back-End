@@ -15,11 +15,3 @@ EXPOSE 5000
 
 CMD ["npm", "start"]
 
-# docker build -t db-service .
-# docker run -d -p 5000:5000 db-service
-# docker ps
-# docker logs <container_id>
-# docker exec -it <container_id> sh
-
-# docker tag db-service:latest rupeshvanneldas27/db-service:latest && docker push rupeshvanneldas27/db-service:latest
-# docker build -t rupeshvanneldas27/db-service:latest . && docker push rupeshvanneldas27/db-service:latest
