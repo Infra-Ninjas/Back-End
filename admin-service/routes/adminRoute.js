@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { addDoctor } from "../controllers/adminController.js";
+import { addDoctor, adminDashboard } from "../controllers/adminController.js";
 import multer from "multer";
 import { appointmentCancel, appointmentsAdmin } from "../controllers/appointmentController.js";
 
@@ -38,5 +38,6 @@ const authAdminMiddleware = async (req, res, next) => {
 adminRouter.post("/add-doctor", authAdminMiddleware, upload.single("image"), addDoctor);
 adminRouter.get("/list-appointments", authAdminMiddleware, appointmentsAdmin);
 adminRouter.post("/cancel-appointment", authAdminMiddleware, appointmentCancel);
+adminRouter.get("/dashboard", authAdminMiddleware, adminDashboard);
 
 export default adminRouter;

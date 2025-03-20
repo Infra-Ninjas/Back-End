@@ -2,7 +2,7 @@ import express from "express";
 import Appointment from "../models/appointmentModel.js";
 import mongoose from "mongoose";
 
-const { ObjectId } = mongoose.Types; // Correct import
+const { ObjectId } = mongoose.Types;
 
 const appointmentRouter = express.Router();
 
@@ -21,19 +21,41 @@ appointmentRouter.post("/", async (req, res) => {
 appointmentRouter.get("/", async (req, res) => {
   try {
     console.log("Received GET /api/appointments with query:", req.query);
-    const { userId } = req.query;
+    const { userId, docId } = req.query;
 
-    let appointments;
+    let query = {};
+
+    // Validate and filter by userId if provided
     if (userId) {
-      appointments = await Appointment.find({ userId });
-    } else {
-      appointments = await Appointment.find();
+      if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid userId format",
+        });
+      }
+      query.userId = userId;
     }
+
+    // Validate and filter by docId if provided
+    if (docId) {
+      if (!ObjectId.isValid(docId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid docId format",
+        });
+      }
+      query.docId = docId;
+    }
+
+    const appointments = await Appointment.find(query);
 
     if (!appointments || appointments.length === 0) {
       return res.status(404).json({
         success: false,
-        message: userId ? "No appointments found for this user" : "No appointments found",
+        message:
+          userId ? "No appointments found for this user" :
+          docId ? "No appointments found for this doctor" :
+          "No appointments found",
       });
     }
 
@@ -47,7 +69,6 @@ appointmentRouter.get("/", async (req, res) => {
 // Get appointment by ID (GET /api/appointments/:id)
 appointmentRouter.get("/:id", async (req, res) => {
   try {
-    // Validate the ID format
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
@@ -65,10 +86,10 @@ appointmentRouter.get("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
+
 // Update appointment by ID (PUT /api/appointments/:id)
 appointmentRouter.put("/:id", async (req, res) => {
   try {
-    // Validate the ID format
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,

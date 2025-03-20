@@ -2,11 +2,11 @@ import validator from "validator";
 import axios from "axios";
 import FormData from "form-data";
 
-const DATABASE_SERVICE_URL = "http://db-service:5000/api/upload-image"; // ✅ Ensure this is correct
+const DATABASE_SERVICE_URL = "http://db-service:5000/api"; // Base URL for db-service (corrected from /upload-image)
 
 const addDoctor = async (req, res) => {
   try {
-    console.log("📩 Incoming Request Body:", req.body); // ✅ Debugging log
+    console.log("📩 Incoming Request Body:", req.body);
 
     const requiredFields = [
       "name",
@@ -42,7 +42,6 @@ const addDoctor = async (req, res) => {
 
     let { address } = req.body;
 
-    // 🔹 Parse the `address` field if it's a string
     if (typeof address === "string") {
       try {
         address = JSON.parse(address);
@@ -64,7 +63,6 @@ const addDoctor = async (req, res) => {
     let imageUrl = null;
     if (req.file) {
       console.log("📤 Forwarding image to `db-service`...");
-      // 🔹 Convert file to a stream and send to `db-service`
       const formData = new FormData();
       formData.append("image", req.file.buffer, {
         filename: req.file.originalname,
@@ -73,7 +71,7 @@ const addDoctor = async (req, res) => {
 
       try {
         const uploadResponse = await axios.post(
-          DATABASE_SERVICE_URL,
+          `${DATABASE_SERVICE_URL}/upload-image`, // Use the correct endpoint
           formData,
           {
             headers: { ...formData.getHeaders() },
@@ -95,14 +93,13 @@ const addDoctor = async (req, res) => {
           .json({ success: false, message: "Image Upload Error" });
       }
     } else {
-      imageUrl = "default-profile.png"; // ✅ Fallback in case no image is provided
+      imageUrl = "default-profile.png";
     }
 
-    // 🔹 Prepare doctor data (send plaintext password)
     const doctorData = {
       name,
       email,
-      password, // Send plaintext password, let db-service hash it
+      password,
       speciality,
       degree,
       experience,
@@ -115,20 +112,18 @@ const addDoctor = async (req, res) => {
       date: Date.now(),
     };
 
-    // 🔹 Extract and validate the admin token
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ success: false, message: "Admin token missing" });
     }
 
-    // 🔹 Send to database service with Authorization header
     const response = await axios.post(
-      "http://db-service:5000/api/doctors",
+      `${DATABASE_SERVICE_URL}/doctors`,
       doctorData,
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Forward the admin token
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -147,6 +142,58 @@ const addDoctor = async (req, res) => {
   }
 };
 
+// API to get dashboard data for admin panel
+const adminDashboard = async (req, res) => {
+  try {
+    // Fetch doctors from db-service
+    console.log("Fetching doctors from db-service...");
+    const doctorsResponse = await axios.get(`${DATABASE_SERVICE_URL}/doctors`);
+    if (!doctorsResponse.data.success) {
+      return res.status(404).json({
+        success: false,
+        message: "No doctors found",
+      });
+    }
+    const doctors = doctorsResponse.data.data;
 
+    // Fetch users from db-service
+    console.log("Fetching users from db-service...");
+    const usersResponse = await axios.get(`${DATABASE_SERVICE_URL}/users`);
+    if (!usersResponse.data.success) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found",
+      });
+    }
+    const users = usersResponse.data.data;
 
-export { addDoctor };
+    // Fetch appointments from db-service
+    console.log("Fetching appointments from db-service...");
+    const appointmentsResponse = await axios.get(`${DATABASE_SERVICE_URL}/appointments`);
+    if (!appointmentsResponse.data.success) {
+      return res.status(404).json({
+        success: false,
+        message: "No appointments found",
+      });
+    }
+    const appointments = appointmentsResponse.data.data;
+
+    // Prepare dashboard data
+    const dashData = {
+      doctors: doctors.length,
+      appointments: appointments.length,
+      patients: users.length,
+      latestAppointments: appointments.reverse().slice(0, 5), // Get the 5 most recent appointments
+    };
+
+    res.json({ success: true, dashData });
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error.message);
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+};
+
+export { addDoctor, adminDashboard };
