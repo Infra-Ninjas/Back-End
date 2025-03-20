@@ -3,7 +3,7 @@ name: Build and Push Database Service Image to ACR
 on:
   push:
     paths:
-      - 'db-service/**'
+      - 'database-service/**'
 
 jobs:
   build-and-push:
