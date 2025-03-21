@@ -2,20 +2,6 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Accept build arguments
-ARG MONGODB_URI
-ARG CLOUDINARY_NAME
-ARG CLOUDINARY_API_KEY
-ARG CLOUDINARY_SECRET_KEY
-ARG JWT_SECRET
-
-# Make them available inside the container
-ENV MONGODB_URI=$MONGODB_URI
-ENV CLOUDINARY_NAME=$CLOUDINARY_NAME
-ENV CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
-ENV CLOUDINARY_SECRET_KEY=$CLOUDINARY_SECRET_KEY
-ENV JWT_SECRET=$JWT_SECRET
-
 # Copy package files first
 COPY package*.json ./
 
@@ -29,3 +15,8 @@ EXPOSE 4001
 
 CMD ["npm", "start"]
 
+# docker build -t admin-service .
+# docker run -d -p 4001:4001 admin-service
+# docker ps
+# docker logs <container_id>
+# docker exec -it <container_id> sh

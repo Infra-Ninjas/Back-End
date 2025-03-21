@@ -6,7 +6,7 @@ const DATABASE_SERVICE_URL = "http://db-service:5000/api"; // Base URL for db-se
 
 const addDoctor = async (req, res) => {
   try {
-    console.log("📩 Incoming Request Body:", req.body);
+    console.log("📩 Incoming Request Body:", req.body); // ✅ Debugging log
 
     const requiredFields = [
       "name",
@@ -42,6 +42,7 @@ const addDoctor = async (req, res) => {
 
     let { address } = req.body;
 
+    // 🔹 Parse the `address` field if it's a string
     if (typeof address === "string") {
       try {
         address = JSON.parse(address);
@@ -62,22 +63,28 @@ const addDoctor = async (req, res) => {
 
     let imageUrl = null;
     if (req.file) {
-      console.log("📤 Forwarding image to `db-service`...");
+      console.log("📤 Forwarding image to `db-service` at:", `${DATABASE_SERVICE_URL}/upload-image`);
+      console.log("📤 Image Details:", {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.buffer.length,
+      });
+    
       const formData = new FormData();
       formData.append("image", req.file.buffer, {
         filename: req.file.originalname,
         contentType: req.file.mimetype,
       });
-
+    
       try {
         const uploadResponse = await axios.post(
-          `${DATABASE_SERVICE_URL}/upload-image`, // Use the correct endpoint
+          `${DATABASE_SERVICE_URL}/upload-image`, // Should resolve to http://db-service:5000/api/upload-image
           formData,
           {
             headers: { ...formData.getHeaders() },
           }
         );
-
+    
         if (uploadResponse.data.success) {
           imageUrl = uploadResponse.data.imageUrl;
           console.log("✅ Image Uploaded:", imageUrl);
@@ -87,19 +94,24 @@ const addDoctor = async (req, res) => {
             .json({ success: false, message: "Image Upload Failed" });
         }
       } catch (err) {
-        console.error("❌ Image Upload Error:", err.message);
-        return res
-          .status(500)
-          .json({ success: false, message: "Image Upload Error" });
+        console.error("❌ Image Upload Error Details:", {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+        });
+        return res.status(500).json({
+          success: false,
+          message: "Image Upload Error: " + (err.response?.data?.message || err.message),
+        });
       }
     } else {
       imageUrl = "default-profile.png";
     }
-
+    // 🔹 Prepare doctor data (send plaintext password)
     const doctorData = {
       name,
       email,
-      password,
+      password, // Send plaintext password, let db-service hash it
       speciality,
       degree,
       experience,
@@ -112,18 +124,20 @@ const addDoctor = async (req, res) => {
       date: Date.now(),
     };
 
+    // 🔹 Extract and validate the admin token
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ success: false, message: "Admin token missing" });
     }
 
+    // 🔹 Send to database service with Authorization header
     const response = await axios.post(
-      `${DATABASE_SERVICE_URL}/doctors`,
+      "http://db-service:5000/api/doctors",
       doctorData,
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, // Forward the admin token
         },
       }
     );
@@ -141,6 +155,7 @@ const addDoctor = async (req, res) => {
     });
   }
 };
+
 
 // API to get dashboard data for admin panel
 const adminDashboard = async (req, res) => {

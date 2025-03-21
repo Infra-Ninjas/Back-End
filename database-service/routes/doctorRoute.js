@@ -1,10 +1,61 @@
 import express from "express";
-import Doctor from "../models/doctorModel.js";
+import Doctor from "../models/doctorModel.js"; // Note: You used doctorModel.js, not Doctor.js
 import mongoose from "mongoose";
+import bcrypt from "bcrypt"; // Add bcrypt for password hashing
 
 const { ObjectId } = mongoose.Types;
 
 const doctorRouter = express.Router();
+
+// Create a new doctor (POST /api/doctors)
+doctorRouter.post("/", async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees,
+      address,
+      image,
+      available,
+      slots_booked,
+      date,
+    } = req.body;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new doctor instance
+    const doctor = new Doctor({
+      name,
+      email,
+      password: hashedPassword,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees: Number(fees), // Ensure fees is a number
+      address,
+      image,
+      available: available === true || available === "true", // Handle string/boolean
+      slots_booked: slots_booked || {}, // Default to empty object if not provided
+      date: date || Date.now(), // Use provided date or current time
+    });
+
+    // Save to MongoDB
+    await doctor.save();
+    console.log("Doctor Created:", doctor);
+
+    res.status(201).json({ success: true, data: doctor });
+  } catch (error) {
+    console.error("Error creating doctor:", error.message);
+    res.status(500).json({ success: false, message: "Failed to create doctor" });
+  }
+});
 
 // Get all doctors (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
