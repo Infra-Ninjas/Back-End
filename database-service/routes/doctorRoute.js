@@ -1,24 +1,10 @@
 import express from "express";
-import bcrypt from "bcrypt";
 import Doctor from "../models/doctorModel.js";
-import adminAuth from "../middlewares/auth.js";
+import mongoose from "mongoose";
+
+const { ObjectId } = mongoose.Types;
 
 const doctorRouter = express.Router();
-
-// Create a new doctor (POST /api/doctors) - Used by Admin
-doctorRouter.post("/", adminAuth, async (req, res) => {
-  try {
-    const { password, ...rest } = req.body;
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newDoctor = new Doctor({ ...rest, password: hashedPassword });
-    await newDoctor.save();
-    res.status(201).json({ message: "Doctor created successfully", newDoctor });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
 
 // Get all doctors (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
@@ -39,7 +25,6 @@ doctorRouter.get("/", async (req, res) => {
     }
 
     const doctors = await Doctor.find(query).select("-password -email -role -slots_booked");
-
     if (!doctors || doctors.length === 0) {
       return res.status(404).json({ success: false, message: "No doctors found" });
     }
@@ -51,15 +36,23 @@ doctorRouter.get("/", async (req, res) => {
   }
 });
 
-// Get a single doctor by ID (GET /api/doctors/:id)
+// Get a doctor by ID (GET /api/doctors/:id)
 doctorRouter.get("/:id", async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id).select("-password -role"); // Include slots_booked
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid doctor ID format",
+      });
+    }
+
+    const doctor = await Doctor.findById(req.params.id);
     if (!doctor) {
       return res.status(404).json({ success: false, message: "Doctor not found" });
     }
-    res.json({ success: true, data: doctor });
+    res.status(200).json({ success: true, data: doctor });
   } catch (error) {
+    console.error("Error fetching doctor by ID:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -67,17 +60,38 @@ doctorRouter.get("/:id", async (req, res) => {
 // Update doctor's slots_booked (PUT /api/doctors/:id/slots)
 doctorRouter.put("/:id/slots", async (req, res) => {
   try {
+    const { id } = req.params;
     const { slots_booked } = req.body;
-    const updatedDoctor = await Doctor.findByIdAndUpdate(
-      req.params.id,
-      { slots_booked },
-      { new: true }
-    );
-    if (!updatedDoctor) {
-      return res.status(404).json({ success: false, message: "Doctor not found" });
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid doctor ID format",
+      });
     }
-    res.json({ success: true, message: "Slots updated successfully" });
+
+    if (!slots_booked || typeof slots_booked !== "object") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid slots_booked data",
+      });
+    }
+
+    const doctor = await Doctor.findByIdAndUpdate(
+      id,
+      { slots_booked },
+      { new: true, runValidators: true }
+    );
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    res.status(200).json({ success: true, message: "Doctor slots updated", data: doctor });
   } catch (error) {
+    console.error("Error updating doctor slots:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

@@ -21,7 +21,7 @@ appointmentRouter.post("/", async (req, res) => {
 appointmentRouter.get("/", async (req, res) => {
   try {
     console.log("Received GET /api/appointments with query:", req.query);
-    const { userId, docId } = req.query;
+    const { userId, docId, sort } = req.query;
 
     let query = {};
 
@@ -47,7 +47,13 @@ appointmentRouter.get("/", async (req, res) => {
       query.docId = docId;
     }
 
-    const appointments = await Appointment.find(query);
+    // Build the query with sorting
+    let appointmentQuery = Appointment.find(query);
+    if (sort) {
+      appointmentQuery = appointmentQuery.sort(sort); // e.g., "-slotDate" for descending
+    }
+
+    const appointments = await appointmentQuery;
 
     if (!appointments || appointments.length === 0) {
       return res.status(404).json({
