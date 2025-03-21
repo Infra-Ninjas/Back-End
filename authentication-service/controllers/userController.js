@@ -72,26 +72,34 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validate request body
     if (!email || !password) {
       return res
         .status(400)
         .json({ success: false, message: "Missing email or password" });
     }
 
+    // Validate email format
     if (!validator.isEmail(email)) {
       return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
+    // Fetch user from db-service
+    console.log(`Fetching user with email ${email} from db-service...`);
     const response = await axios.get(`${dbServiceUrl}/users`, {
       params: { email },
     });
+
     if (!response.data.success || !response.data.data.length) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    const user = response.data.data[0];
 
+    const user = response.data.data[0];
+    console.log("User fetched from db-service:", user);
+
+    // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res
@@ -99,16 +107,26 @@ const loginUser = async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    res.json({ success: true, token, role: user.role });
+    // Return success response with token, role, and userId
+    res.json({
+      success: true,
+      token,
+      role: user.role,
+      userId: user._id, // Add userId to the response
+    });
   } catch (error) {
-    console.error("Error in user login:", error.message);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Error in user login:", error.message, error.stack);
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
   }
 };
 
