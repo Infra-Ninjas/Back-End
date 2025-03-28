@@ -1,2 +1,2 @@
 # admin-service
-test1
+test2
