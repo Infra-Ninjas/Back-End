@@ -1,7 +1,7 @@
 import express from "express";
-import Doctor from "../models/doctorModel.js"; // Note: You used doctorModel.js, not Doctor.js
+import Doctor from "../models/doctorModel.js";
 import mongoose from "mongoose";
-import bcrypt from "bcrypt"; // Add bcrypt for password hashing
+import bcrypt from "bcrypt";
 
 const { ObjectId } = mongoose.Types;
 
@@ -25,6 +25,23 @@ doctorRouter.post("/", async (req, res) => {
       slots_booked,
       date,
     } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: name, email, and password are required",
+      });
+    }
+
+    // Check if doctor with the same email already exists
+    const existingDoctor = await Doctor.findOne({ email });
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor with this email already exists",
+      });
+    }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -53,11 +70,11 @@ doctorRouter.post("/", async (req, res) => {
     res.status(201).json({ success: true, data: doctor });
   } catch (error) {
     console.error("Error creating doctor:", error.message);
-    res.status(500).json({ success: false, message: "Failed to create doctor" });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Get all doctors (GET /api/doctors)
+// Get all doctors or a doctor by email (GET /api/doctors)
 doctorRouter.get("/", async (req, res) => {
   try {
     const { email, available } = req.query;
@@ -75,8 +92,8 @@ doctorRouter.get("/", async (req, res) => {
       query.available = true;
     }
 
-    const doctors = await Doctor.find(query).select("-password -email -role -slots_booked");
-    if (!doctors || doctors.length === 0) {
+    const doctors = await Doctor.find(query).select("-password -email -role");
+    if (doctors.length === 0) {
       return res.status(404).json({ success: false, message: "No doctors found" });
     }
 
@@ -143,6 +160,51 @@ doctorRouter.put("/:id/slots", async (req, res) => {
     res.status(200).json({ success: true, message: "Doctor slots updated", data: doctor });
   } catch (error) {
     console.error("Error updating doctor slots:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update doctor profile (PUT /api/doctors/:id)
+doctorRouter.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fees, address, available } = req.body;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid doctor ID format",
+      });
+    }
+
+    // Prepare update data, only including provided fields
+    const updateData = {};
+    if (fees !== undefined) updateData.fees = Number(fees);
+    if (address !== undefined) updateData.address = address;
+    if (available !== undefined) updateData.available = available === true || available === "true";
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+    }
+
+    const doctor = await Doctor.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    res.status(200).json({ success: true, message: "Doctor profile updated", data: doctor });
+  } catch (error) {
+    console.error("Error updating doctor profile:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

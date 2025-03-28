@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose"; // Add this import
 import User from "../models/userModel.js";
 
 const userRouter = express.Router();
@@ -49,5 +50,48 @@ userRouter.get("/users/:userId", async (req, res) => {
   }
 });
 
+// Update a user by ID (PUT /api/users/:userId)
+userRouter.put("/users/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { name, phone, address, dob, gender, image } = req.body;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid userId format",
+      });
+    }
+
+    // Prepare update data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (dob) updateData.dob = dob;
+    if (gender) updateData.gender = gender;
+    if (image) updateData.image = image;
+
+    // Update user in the database
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({ success: true, message: "Profile updated successfully", data: updatedUser });
+  } catch (error) {
+    console.error("Error updating user profile in db-service:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 export default userRouter;

@@ -57,7 +57,7 @@ const registerUser = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(201).json({ success: true, token, role: user.role });
+    res.status(200).json({ success: true, token, role: user.role });
   } catch (error) {
     console.error("Error registering patient:", error.message);
     res.status(error.response?.status || 500).json({

@@ -21,7 +21,7 @@ appointmentRouter.post("/", async (req, res) => {
 appointmentRouter.get("/", async (req, res) => {
   try {
     console.log("Received GET /api/appointments with query:", req.query);
-    const { userId, docId, sort } = req.query;
+    const { userId, docId, cancelled, sort } = req.query;
 
     let query = {};
 
@@ -47,6 +47,11 @@ appointmentRouter.get("/", async (req, res) => {
       query.docId = docId;
     }
 
+    // Filter by cancelled status if provided
+    if (cancelled !== undefined) {
+      query.cancelled = cancelled === "true"; // Convert string to boolean
+    }
+
     // Build the query with sorting
     let appointmentQuery = Appointment.find(query);
     if (sort) {
@@ -56,13 +61,17 @@ appointmentRouter.get("/", async (req, res) => {
     const appointments = await appointmentQuery;
 
     if (!appointments || appointments.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message:
-          userId ? "No appointments found for this user" :
-          docId ? "No appointments found for this doctor" :
-          "No appointments found",
-      });
+      let message = "No appointments found";
+      if (userId) {
+        message = cancelled === "false"
+          ? "No active appointments found for this user"
+          : "No appointments found for this user";
+      } else if (docId) {
+        message = cancelled === "false"
+          ? "No active appointments found for this doctor"
+          : "No appointments found for this doctor";
+      }
+      return res.status(404).json({ success: false, message });
     }
 
     res.status(200).json({ success: true, data: appointments });
