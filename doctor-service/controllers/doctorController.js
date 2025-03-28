@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 dotenv.config();
 
 const dbServiceUrl = "http://db-service:5000/api";
+const authServiceUrl =  "http://authentication-service:4000/api";
 
 // List all doctors
 const doctorList = async (req, res) => {
@@ -24,6 +25,9 @@ const doctorList = async (req, res) => {
     res.json({ success: true, doctors });
   } catch (error) {
     console.error("Error fetching doctors from db-service:", error.message);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
     if (error.response) {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
@@ -50,7 +54,6 @@ const doctorAppointments = async (req, res) => {
       });
     }
 
-    // Validate docId format
     if (!ObjectId.isValid(docId)) {
       return res.status(400).json({
         success: false,
@@ -58,7 +61,6 @@ const doctorAppointments = async (req, res) => {
       });
     }
 
-    // Ensure the docId matches the authenticated doctor's ID
     if (docId !== user.id) {
       return res.status(403).json({
         success: false,
@@ -83,6 +85,9 @@ const doctorAppointments = async (req, res) => {
     res.json({ success: true, appointments });
   } catch (error) {
     console.error("Error fetching appointments:", error.message, error.response?.data);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
@@ -94,9 +99,8 @@ const doctorAppointments = async (req, res) => {
 const cancelAppointment = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const user = req.user; // From authDoctor middleware
+    const user = req.user;
 
-    // Validate request body
     if (!docId || !appointmentId) {
       return res.status(400).json({
         success: false,
@@ -104,7 +108,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Validate ObjectId format
     if (!ObjectId.isValid(docId)) {
       return res.status(400).json({
         success: false,
@@ -118,7 +121,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Ensure the docId matches the authenticated doctor's ID
     if (docId !== user.id) {
       return res.status(403).json({
         success: false,
@@ -126,7 +128,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Fetch appointment data from db-service
     console.log(`Fetching appointment ${appointmentId} from db-service...`);
     const appointmentResponse = await axios.get(`${dbServiceUrl}/appointments/${appointmentId}`);
     if (!appointmentResponse.data.success) {
@@ -137,7 +138,6 @@ const cancelAppointment = async (req, res) => {
     }
     const appointmentData = appointmentResponse.data.data;
 
-    // Verify appointment belongs to the doctor
     if (appointmentData.docId !== docId) {
       return res.status(403).json({
         success: false,
@@ -145,7 +145,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Check if appointment is already cancelled or completed
     if (appointmentData.cancelled) {
       return res.status(400).json({
         success: false,
@@ -159,7 +158,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Update appointment cancelled status in db-service
     console.log(`Updating appointment ${appointmentId} to cancelled...`);
     const updateAppointmentResponse = await axios.put(`${dbServiceUrl}/appointments/${appointmentId}`, {
       cancelled: true,
@@ -171,7 +169,6 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Release doctor slot
     const { slotDate, slotTime } = appointmentData;
     console.log(`Fetching doctor ${docId} from db-service...`);
     const doctorResponse = await axios.get(`${dbServiceUrl}/doctors/${docId}`);
@@ -184,15 +181,13 @@ const cancelAppointment = async (req, res) => {
     const doctorData = doctorResponse.data.data;
     let slots_booked = doctorData.slots_booked || {};
 
-    // Remove the cancelled slot
     if (slots_booked[slotDate]) {
       slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
       if (slots_booked[slotDate].length === 0) {
-        delete slots_booked[slotDate]; // Clean up empty slot dates
+        delete slots_booked[slotDate];
       }
     }
 
-    // Update doctor's slots_booked in db-service
     console.log(`Updating doctor's slots_booked for docId ${docId}...`);
     const updateDoctorResponse = await axios.put(`${dbServiceUrl}/doctors/${docId}/slots`, {
       slots_booked,
@@ -207,6 +202,9 @@ const cancelAppointment = async (req, res) => {
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
     console.error("Error cancelling appointment:", error.message);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
@@ -218,9 +216,8 @@ const cancelAppointment = async (req, res) => {
 const completeAppointment = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const user = req.user; // From authDoctor middleware
+    const user = req.user;
 
-    // Validate request body
     if (!docId || !appointmentId) {
       return res.status(400).json({
         success: false,
@@ -228,7 +225,6 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    // Validate ObjectId format
     if (!ObjectId.isValid(docId)) {
       return res.status(400).json({
         success: false,
@@ -242,7 +238,6 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    // Ensure the docId matches the authenticated doctor's ID
     if (docId !== user.id) {
       return res.status(403).json({
         success: false,
@@ -250,7 +245,6 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    // Fetch appointment data from db-service
     console.log(`Fetching appointment ${appointmentId} from db-service...`);
     const appointmentResponse = await axios.get(`${dbServiceUrl}/appointments/${appointmentId}`);
     if (!appointmentResponse.data.success) {
@@ -261,7 +255,6 @@ const completeAppointment = async (req, res) => {
     }
     const appointmentData = appointmentResponse.data.data;
 
-    // Verify appointment belongs to the doctor
     if (appointmentData.docId !== docId) {
       return res.status(403).json({
         success: false,
@@ -269,7 +262,6 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    // Check if appointment is already cancelled or completed
     if (appointmentData.cancelled) {
       return res.status(400).json({
         success: false,
@@ -283,7 +275,6 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    // Update appointment completed status in db-service
     console.log(`Updating appointment ${appointmentId} to completed...`);
     const updateAppointmentResponse = await axios.put(`${dbServiceUrl}/appointments/${appointmentId}`, {
       isCompleted: true,
@@ -298,6 +289,9 @@ const completeAppointment = async (req, res) => {
     res.json({ success: true, message: "Appointment Completed" });
   } catch (error) {
     console.error("Error completing appointment:", error.message);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
@@ -308,10 +302,9 @@ const completeAppointment = async (req, res) => {
 // API for doctor dashboard
 const doctorDashboard = async (req, res) => {
   try {
-    const user = req.user; // From authDoctor middleware
-    const docId = user.id; // Use authenticated doctor's ID
+    const user = req.user;
+    const docId = user.id;
 
-    // Validate docId format
     if (!ObjectId.isValid(docId)) {
       return res.status(400).json({
         success: false,
@@ -319,10 +312,9 @@ const doctorDashboard = async (req, res) => {
       });
     }
 
-    // Fetch appointments from db-service
     console.log(`Fetching appointments for docId ${docId} from db-service...`);
     const appointmentResponse = await axios.get(`${dbServiceUrl}/appointments`, {
-      params: { docId, sort: "-slotDate" }, // Sort by slotDate descending
+      params: { docId, sort: "-slotDate" },
     });
     console.log("Appointment response from db-service:", appointmentResponse.data);
 
@@ -335,18 +327,14 @@ const doctorDashboard = async (req, res) => {
 
     const appointments = appointmentResponse.data.data;
 
-    // Calculate earnings
     let earnings = 0;
     appointments.forEach((item) => {
       if (item.isCompleted || item.payment) {
-        earnings += item.amount || 0; // Fallback to 0 if amount is missing
+        earnings += item.amount || 0;
       }
     });
 
-    // Calculate unique patients using a Set
     const patients = new Set(appointments.map((item) => item.userId));
-
-    // Get the 5 latest appointments (already sorted by db-service)
     const latestAppointments = appointments.slice(0, 5);
 
     const dashData = {
@@ -359,6 +347,9 @@ const doctorDashboard = async (req, res) => {
     res.json({ success: true, dashData });
   } catch (error) {
     console.error("Error fetching doctor dashboard data:", error.message, error.stack);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
@@ -366,4 +357,135 @@ const doctorDashboard = async (req, res) => {
   }
 };
 
-export { doctorList, doctorAppointments, cancelAppointment, completeAppointment, doctorDashboard };
+// API to update doctor profile data from Doctor Panel
+const updateDoctorProfile = async (req, res) => {
+  try {
+    const { docId, fees, address, available } = req.body;
+    const user = req.user;
+
+    if (!docId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required field: docId",
+      });
+    }
+
+    if (!ObjectId.isValid(docId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid docId format",
+      });
+    }
+
+    if (docId !== user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: You can only update your own profile",
+      });
+    }
+
+    const updateData = {};
+    if (fees !== undefined) updateData.fees = Number(fees);
+    if (available !== undefined) updateData.available = available === true || available === "true";
+
+    // Handle the nested address field
+    if (address !== undefined) {
+      // Check if address is an object with the required subfields
+      if (typeof address !== "object" || address === null) {
+        return res.status(400).json({
+          success: false,
+          message: "Address must be an object with street, city, state, and zip fields",
+        });
+      }
+
+      const { street, city, state, zip } = address;
+
+      // Validate required subfields
+      if (!street || !city || !state || !zip) {
+        return res.status(400).json({
+          success: false,
+          message: "Address object must include street, city, state, and zip",
+        });
+      }
+
+      // Assign the nested address object
+      updateData.address = { street, city, state, zip };
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+    }
+
+    console.log(`Updating doctor profile for docId ${docId} at db-service...`);
+    console.log(`Request URL: ${dbServiceUrl}/doctors/${docId}`);
+    console.log(`Update Data: ${JSON.stringify(updateData)}`);
+    const updateResponse = await axios.put(`${dbServiceUrl}/doctors/${docId}`, updateData);
+
+    if (!updateResponse.data.success) {
+      return res.status(500).json({
+        success: false,
+        message: updateResponse.data.message || "Failed to update profile",
+      });
+    }
+
+    res.json({ success: true, message: "Profile Updated" });
+  } catch (error) {
+    console.error("Error updating doctor profile:", error.message);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure db-service is running and accessible at:", dbServiceUrl);
+    }
+    res.status(error.response?.status || 500).json({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+};
+
+// API for doctor login (forward to authentication-service)
+const doctorLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate request body
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: email and password are required",
+      });
+    }
+
+    // Forward the login request to authentication-service
+    console.log(`Forwarding login request for email ${email} to authentication-service...`);
+    const authResponse = await axios.post(`${authServiceUrl}/api/doctor/login`, {
+      email,
+      password,
+    });
+
+    // Return the response from authentication-service
+    res.status(authResponse.status).json(authResponse.data);
+  } catch (error) {
+    console.error("Error during doctor login:", error.message);
+    if (error.code === "ECONNREFUSED") {
+      console.error("Connection refused. Ensure authentication-service is running and accessible at:", authServiceUrl);
+    }
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      // Forward the error response from authentication-service
+      return res.status(error.response.status).json(error.response.data);
+    } else if (error.request) {
+      console.error("No response received from authentication-service:", error.request);
+    } else {
+      console.error("Error in request setup:", error.message);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export { doctorList, doctorAppointments, cancelAppointment, completeAppointment, doctorDashboard, updateDoctorProfile, doctorLogin };
