@@ -25,7 +25,7 @@ const authDoctor = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Access denied: doctor only" });
     }
 
-    req.user = user;
+    req.doctor = user;
     next();
   } catch (error) {
     console.error("Token validation error:", error.message, error.stack);
