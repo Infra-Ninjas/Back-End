@@ -45,7 +45,7 @@ const doctorAppointments = async (req, res) => {
   try {
     console.log("Route /appointments hit with query:", req.query);
     const { docId } = req.query;
-    const user = req.user; // From authDoctor middleware
+    const doctor = req.doctor; // From authDoctor middleware
 
     if (!docId) {
       return res.status(400).json({
@@ -61,7 +61,7 @@ const doctorAppointments = async (req, res) => {
       });
     }
 
-    if (docId !== user.id) {
+    if (docId !== doctor.id) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You can only view your own appointments",
@@ -99,7 +99,7 @@ const doctorAppointments = async (req, res) => {
 const cancelAppointment = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const user = req.user;
+    const doctor = req.doctor;
 
     if (!docId || !appointmentId) {
       return res.status(400).json({
@@ -121,7 +121,7 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    if (docId !== user.id) {
+    if (docId !== doctor.id) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You can only cancel your own appointments",
@@ -216,7 +216,7 @@ const cancelAppointment = async (req, res) => {
 const completeAppointment = async (req, res) => {
   try {
     const { docId, appointmentId } = req.body;
-    const user = req.user;
+    const doctor = req.doctor;
 
     if (!docId || !appointmentId) {
       return res.status(400).json({
@@ -238,7 +238,7 @@ const completeAppointment = async (req, res) => {
       });
     }
 
-    if (docId !== user.id) {
+    if (docId !== doctor.id) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You can only complete your own appointments",
@@ -302,8 +302,8 @@ const completeAppointment = async (req, res) => {
 // API for doctor dashboard
 const doctorDashboard = async (req, res) => {
   try {
-    const user = req.user;
-    const docId = user.id;
+    const doctor = req.doctor;
+    const docId = doctor.id;
 
     if (!ObjectId.isValid(docId)) {
       return res.status(400).json({
@@ -361,7 +361,7 @@ const doctorDashboard = async (req, res) => {
 const updateDoctorProfile = async (req, res) => {
   try {
     const { docId, fees, address, available } = req.body;
-    const user = req.user;
+    const doctor = req.doctor;
 
     if (!docId) {
       return res.status(400).json({
@@ -377,7 +377,7 @@ const updateDoctorProfile = async (req, res) => {
       });
     }
 
-    if (docId !== user.id) {
+    if (docId !== doctor.id) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You can only update your own profile",
