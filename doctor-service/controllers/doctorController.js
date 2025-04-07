@@ -357,7 +357,7 @@ const doctorDashboard = async (req, res) => {
   }
 };
 
-// API to update doctor profile data from Doctor Panel
+// API to update doctor profile data from Doctor Panel--add fees
 const updateDoctorProfile = async (req, res) => {
   try {
     const { docId, fees, address, available } = req.body;
