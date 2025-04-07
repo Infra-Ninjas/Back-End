@@ -163,7 +163,26 @@ const cancelAppointment = async (req, res) => {
 
     // Verify appointment user
     if (appointmentData.userId !== userId) {
-      return res.json({ success: false, message: "Unauthorized action" });
+      return res.status(403).json({ // Changed to 403 for unauthorized
+        success: false,
+        message: "Unauthorized action",
+      });
+    }
+
+    // Check if appointment is already cancelled
+    if (appointmentData.cancelled) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment is already cancelled",
+      });
+    }
+
+    // Check if appointment is completed
+    if (appointmentData.isCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel a completed appointment",
+      });
     }
 
     // Update appointment cancelled status in db-service
@@ -177,29 +196,8 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Release doctor slot
-    const { docId, slotDate, slotTime } = appointmentData;
-    const doctorResponse = await axios.get(`${dbServiceUrl}/doctors/${docId}`);
-    if (!doctorResponse.data.success) {
-      return res.status(404).json({
-        success: false,
-        message: "Doctor not found",
-      });
-    }
-    const doctorData = doctorResponse.data.data;
-    let slots_booked = doctorData.slots_booked || {};
-
-    // Remove the cancelled slot
-    if (slots_booked[slotDate]) {
-      slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
-    }
-
-    // Update doctor's slots_booked in db-service
-    await axios.put(`${dbServiceUrl}/doctors/${docId}/slots`, {
-      slots_booked,
-    });
-
-    res.json({ success: true, message: 'Appointment Cancelled' });
+    // Send success response
+    res.json({ success: true, message: "Appointment cancelled" });
   } catch (error) {
     console.error("Error cancelling appointment:", error.message);
     res.status(error.response?.status || 500).json({

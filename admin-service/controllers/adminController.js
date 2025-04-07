@@ -156,7 +156,6 @@ const addDoctor = async (req, res) => {
   }
 };
 
-
 // API to get dashboard data for admin panel
 const adminDashboard = async (req, res) => {
   try {
@@ -193,12 +192,30 @@ const adminDashboard = async (req, res) => {
     }
     const appointments = appointmentsResponse.data.data;
 
+    // Calculate total revenue from completed appointments
+    const completedAppointments = appointments.filter(appointment => appointment.isCompleted === true);
+    console.log("Completed appointments:", completedAppointments);
+
+    const totalRevenue = completedAppointments.reduce((sum, appointment) => {
+      const revenue = appointment.amount || 0;
+      console.log("Appointment revenue:", revenue); // Log each amount being added
+      return sum + revenue;
+    }, 0);
+    console.log("Total revenue calculated:", totalRevenue);
+
+    // Get the five most recent appointments
+    const latestAppointments = appointments
+      .sort((a, b) => b.date - a.date) // Sort by date in descending order (most recent first)
+      .slice(0, 5); // Take the first 5
+    console.log("Latest appointments:", latestAppointments);
+
     // Prepare dashboard data
     const dashData = {
       doctors: doctors.length,
       appointments: appointments.length,
       patients: users.length,
-      latestAppointments: appointments.reverse().slice(0, 5), // Get the 5 most recent appointments
+      totalRevenue: totalRevenue, // Total revenue from completed appointments
+      latestAppointments: latestAppointments, // Five most recent appointments
     };
 
     res.json({ success: true, dashData });
