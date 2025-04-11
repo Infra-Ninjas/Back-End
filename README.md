@@ -55,6 +55,13 @@ Ensure you have the following installed on your system:
    ```bash
    git clone https://github.com/Infra-Ninjas/Back-End.git
 
+2. **Install Dependencies**:
+   Install for each microservice:
+    ```bash
+    cd <service-name>
+    npm install
+
+
 
 
 
