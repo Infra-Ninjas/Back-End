@@ -21,7 +21,7 @@ The repository comprises the following microservices:
   2. Manage Dashboard to have bird's eye view of appointments, doctors, users and total revenue.
   3. View Doctors list
   4. View All Appointments
-- **Authentication Service**: Handles user authentication and authorization processes.
+- **Authentication Service**: The Authentication micro service provides multi-user authentication, enabling separate and secure login mechanisms for patients, doctors, and administrators. Each user type is authenticated through distinct workflows tailored to their roles and permissions. This ensures that access control is properly enforced, with users only able to perform actions relevant to their role within the platform.
 - **Database Service**: Provides database management and operations.
 - **Doctor Service**: Manages doctor-related functionalities and data.
 - **User Service**: Handles user-related operations and information.
