@@ -9,8 +9,6 @@ This repository contains the backend microservices for the Infra-Ninjas project.
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Microservices Overview
 
@@ -60,8 +58,18 @@ Ensure you have the following installed on your system:
     ```bash
     cd <service-name>
     npm install
+    
+## Repeat for:
+  - **admin-service**
+  - **authentication-service**
+  - **database-service** 
+  - **doctor-service**  
+  - **user-service**
 
-
-
-
+ ## Usage
+### Running Locally
+1. Set up environment variables for each microservice by creating a **.env file** in its folder.
+2. Start each service:
+   ```bash
+   npm start
 
