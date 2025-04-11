@@ -26,6 +26,16 @@ The repository comprises the following microservices:
 - **Doctor Service**: Manages doctor-related functionalities and data.
 - **User Service**: Handles user-related operations and information.
 
+## Service Port Mapping
+
+| Microservice            | Port (Host:Container) |
+|-------------------------|------------------------|
+| **admin-service**       | `4001:4001`            |
+| **authentication-service** | `4000:4000`        |
+| **database-service**    | `5000:5000`            |
+| **doctor-service**      | `4003:4003`            |
+| **user-service**        | `4002:4002`            |
+
 ## Getting Started
 
 To set up and run these microservices locally, follow the steps below.
