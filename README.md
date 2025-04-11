@@ -16,7 +16,11 @@ This repository contains the backend microservices for the Infra-Ninjas project.
 
 The repository comprises the following microservices:
 
-- **Admin Service**: Manages administrative operations and configurations.
+- **Admin Service**: The Admin Service provides full administrative control over the system. It acts as a central management layer enabling platform administrators to oversee and moderate all core entities and activities within the ecosystem. Key functionalities include:
+  1. Add Doctors
+  2. Manage Dashboard to have bird's eye view of appointments, doctors, users and total revenue.
+  3. View Doctors list
+  4. View All Appointments
 - **Authentication Service**: Handles user authentication and authorization processes.
 - **Database Service**: Provides database management and operations.
 - **Doctor Service**: Manages doctor-related functionalities and data.
